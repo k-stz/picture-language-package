@@ -29,10 +29,6 @@
 				  (declare (ignore char n))
 				  (list 'sdl2:in-main-thread () (read str t nil t))))
 
-;; quite clunky, but with the right abstraction this can be done with even less typing
-;; #m (progn
-;;      (gl:bind-vertex-array *vao*)
-;;      (%gl:buffer-sub-data :array-buffer (* 108 4) (* 72 4) *tex-coord*)) ;<- provide texture
 
 
 ;;; HOW TO USE:
@@ -65,9 +61,7 @@
    (last-frame-ticks :initform (sdl2:get-ticks))
    (frames :initform 0)
    (width :accessor window-width)
-   (height :accessor window-height)
-   (keystate-tracker :initform (make-instance 'keystate-tracker)
-		     :reader keystate-tracker)))
+   (height :accessor window-height)))
 
 (defvar *game-window*)
 
@@ -124,53 +118,6 @@
 (defun initialize-program ()
   (setf *programs-dict* (load-shaders)))
 
-;;VAO setup.....................................................................
-
-(defvar *vao* 0)
-(defvar *vbo* 0)
-
-(defun initialize-vao ()
-  (let ((vao (first (gl:gen-vertex-arrays 1)))
-	(vbo (first (gl:gen-buffers 1)))
-	(ibo (first (gl:gen-buffers 1))))
-    (gl:bind-vertex-array vao)
-    ;;VBO
-    (gl:bind-buffer :array-buffer vbo)
-    ;;VBO - positions
-    ;;to avoid magic numbers (* 24 4 3 2) the gl:gl-array (gl:alloc-gl-array) can be used,
-    ;;which is a struct containing field with a pointer to the forein-memory and a field
-    ;;with the size.  In this case ommited for the sake of a terse example.
-    ;; Layout:
-    ;; 8 number of vertices/colors
-    ;; 3 components per vertex
-    ;; 4 size of float
-    ;; second (texture coordinate)
-    ;; 8 vertices need to be associated with 2d-texture corner
-    ;; 2 2d-texture needs two indices to read from it
-    ;; 4 size of float
-    (%gl:buffer-data :array-buffer (+ (* 108 4) (* 72 4)) *cube-positions* :static-draw)
-    (%gl:enable-vertex-attrib-array 0)
-    (%gl:vertex-attrib-pointer 0 3 :float :false 0 0)
-    ;;VBO - texture coordinates
-    ;; texture sub-data starts in vbo exactly after the position vertices hence
-    (%gl:buffer-sub-data :array-buffer (* 108 4) (* 72 4) *tex-coord*)
-    (%gl:enable-vertex-attrib-array 5)
-    (%gl:vertex-attrib-pointer 5 2 :float :false 0 (* 108 4))
-
-    ;;IBO
-    (gl:bind-buffer :element-array-buffer ibo)
-    ;; why (* 36 2)?
-    ;; it takes 2 triangles to draw the side of cube, hence to draw a whole cube:
-    ;; (* 2 6) => 12. Each triangle consists of 3 vertices, hence, (* 3 12) => 36
-    ;; and the index buffer's indices first point to the vertices in the vbo,
-    ;; supplied by *cube-positions*
-    (%gl:buffer-data :element-array-buffer (* 2 36) *cube-indices* :static-draw)
-
-    (gl:bind-vertex-array 0)
-    (gl:bind-buffer :array-buffer 0)
-    (setf *vbo* vbo)
-    (setf *vao* vao)))
-
 ;;utils-------------------------------------------------------------------------
 
 (defun framelimit (window &optional (fps 60))
@@ -196,7 +143,6 @@
 
 ;;init code---------------------------------------------------------------------
 
-(defvar *tex-unit* 0)
 
 (defun rectangle-program-pixel-transfer (game-window)
   ;; here we pass the window width and height to the shader, so it has
@@ -235,8 +181,6 @@
   (gl:depth-range 0.0 1.0)
   
   (initialize-program)
-  ;(initialize-vao)
-
 
   ;; EXPERIMENTS
   (game-objects::initialize-rectangle-vao)
@@ -248,30 +192,7 @@
   (use-program *programs-dict* 0)
   
   ;; /EXPERIMETNS
-
-  
-  ;;texture
-  ;; ;; here we associate the uniform sample with the texture image unit
-  ;; (use-program *programs-dict* :basic-projection)
-  ;; (uniform :int :test-texture *tex-unit*) ; = glUniform1i(<location>, <texture-image-unit>);
-  ;; (use-program *programs-dict* 0)
-
 )
-
-
-
-;;texture data------------------------------------------------------------------
-
-
-;; (defvar *2d-texture-data*
-;;   (cffi:foreign-alloc :unsigned-char :initial-contents (loop for i upto 255 collect i)))
-
-
-
-;; ;;(defparameter *123-texture-data*)
-
-;; (defvar *sampler* 0)
-;; (defvar *texture* 0)
 
 
 
@@ -290,14 +211,14 @@
   (let ((nyo-rectangle ;(game-objects:make-rectangle 100.0 100.0 64.0 96.0)
 	 (game-objects:make-rectangle-c (vec3 100.0 100.0 0.0)
 					(vec3 32.0 48.0 0.0))))
-    (print (bounding-volume nyo-rectangle))
     (game-objects:add-rectangle-as :nyo nyo-rectangle)
     ;; NEXT-TODO:
     ;; Problem with this: some BV transformation and creation function use the rendering coordinates
     ;; :x1 :x2 :y1 :y2. Either create, (CH?), point set as part of the representation stored in
     ;; :bounding-volume slot of Rectangle or derive point set from rectangle/radius etc.
     ;; (set-radius (bounding-volume nyo-rectangle) (vec3 20.0 42.0 0.0))
-    (game-objects:set-animation :nyo :walk :down 0 :nyo)))
+    (game-objects:set-animation :nyo :walk :down 0 :nyo)
+    ))
 
 (defparameter *nyo-rectangle* (init-nyo-rectangle))
 
@@ -305,19 +226,24 @@
 
   ;; makes the keyboard state global in the window object, so we can access
   ;; it whenever we want in the rendering loop
-  (keystate-update (keystate-tracker window) state repeat-p keysym)
+;  (keystate-update (keystate-tracker window) state repeat-p keysym)
   
   (let ((scancode (sdl2:scancode keysym)))
     (when (eq :scancode-d scancode)
       (game-objects:move :nyo (vec2 5.0 0.0)))
+    (when (eq :scancode-a scancode)
+      (game-objects:move :nyo (vec2 -5.0 0.0)))
 
     (when (eq :scancode-c scancode)
       (game-objects::clr-seq-hash game-objects::*dynamic-rectangles*))
+    (when (eq :scancode-n scancode)
+      (init-nyo-rectangle))
+    
     (when (eq :scancode-escape scancode)
       (close-window window))
     ;; for tests
     (when (eq :scancode-t scancode)
-      (collision-test))))
+      (print "test"))))
 
 ;;Rendering----------------------------------------------------------------------
 
@@ -331,11 +257,9 @@
 
   ;; TODO: apply draw range
   (game-objects::draw-rectangles)
-  ;; very strange, why when I put this here it works, but not before the DRAW-* call??
-
 
   (gl:bind-vertex-array 0)
-;  (gl:bind-buffer :array-buffer 0)
+
   (use-program *programs-dict* 0))
 
 (defmethod render ((window game-window))
@@ -344,10 +268,6 @@
   ;; after RENDER.
   (gl:clear :color-buffer :depth-buffer-bit)
   
-;  (using-keyboard-state window)
-
-  ;; (collision-test) ;; test if this is bottleneck UPDATE: rendering seems to hog CPU time
-
   (draw-rectangles)
 
   (display-fps window)

@@ -28,7 +28,7 @@
   (:export :rectangle
 	   ;; wow, else we can't access the unqualified from other
 	   ;; packages like so (slot-value *rectangle* 'x1) ...
-	   :x1 :x2 :y1 :y2 :center-point :radius :bounding-volume
+	   :x1 :x2 :y1 :y2 :center-point :radius
 	   ;; BV
 	   :set-radius
 	   ;; rectangle
@@ -243,11 +243,6 @@
    (tex-y1 :initarg :tex-y1 :type vec2 :initform (vec2 0.0 1.0))
    (tex-y2 :initarg :tex-y2 :type vec2 :initform (vec2 1.0 1.0))
 
-   ;; Bounding Volume used for collision test - the proxy geometry
-   ;; Now all transformation functions must also update this one
-   (bounding-volume :initarg :bounding-volume :type collision-rectangle
-		    :accessor bounding-volume)
-
    ;; for now we directly couple animation with the rectangle
    (animation-state :type animation :initform (make-animation) :reader animation-state)))
 
@@ -262,105 +257,6 @@
 		"center-point:~S radius:~S"
 		center-point radius)))))
 
-
-;; Bounding Volume calculation
-(defgeneric translate-bounding-volume (bounding-volume vec3))
-(defgeneric scale-bounding-volume (bounding-volume vec3))
-(defgeneric rotate-bounding-volume (bounding-volume vec3))
-
-
-(defmethod translate-bounding-volume ((collision-rectangle collision-rectangle) direction-vec3)
-  (with-slots (center-point) collision-rectangle
-    (setf center-point (vec3+ center-point direction-vec3))))
-
-(defmethod scale-bounding-volume ((collision-rectangle collision-rectangle) scale-vec3)
-  (with-slots (radius) collision-rectangle
-    (macrolet ((r (subscript)
-		 `(aref radius ,subscript))
-	       (s (subscript)
-		 `(aref scale-vec3 ,subscript)))
-      ;; TODO: hm (vec3* ) allocates a fresh vector, while this directly changes radius'
-      ;; subscripts.
-      (setf (r 0) (* (r 0) (s 0)))
-      (setf (r 1) (* (r 1) (s 1)))
-      (setf (r 2) (* (r 2) (s 2))))))
-
-
-
-(defgeneric update-aabb (game-object transformation-matrix translation-vector))
-
-;; ugh, this only works if we assume a base radius, because it draws a fresh aabb around
-;; it, drawing a aabb around the old grows the aabb to infinity. But we can't have
-;; a base radius since we want to do arbitrary scaling as well. Rather, we will
-;; go straight for OBB (oriented bounding boxes) which probably use a rotation matrix
-;; and a translation
-(defmethod update-aabb ((collision-rectangle collision-rectangle) mat4 translation-vec3)
-  (let ((new-center-point (vec3 0.0))
-	(new-radius (vec3 0.0)))
-    (with-slots (center-point radius radians-vec3) collision-rectangle
-      (macrolet ((c (subscript) `(aref new-center-point ,subscript))
-		 (r (subscript) `(aref new-radius ,subscript))
-		 (t (subscript) `(aref translation-vec3 ,subscript)))
-	(loop for i from 0 below 3 do
-	     (setf (c i) (t i))
-	     (setf (r i) 0.0)
-	     (loop for j from 0 below 3 do
-	     	  (incf (c i) (* (mat4-place mat4 i j) (aref center-point j)))
-		  (incf (r i) (* (abs (mat4-place mat4 i j)) (aref radius j))))))
-      (format t "~%")
-      (print radius)
-      (print new-radius)
-      collision-rectangle)))
-
-
-;; TODO: doesn't work properly, needs base rectangle data or it keeps on adding a bigger
-;;       AABB around the old smaller one growing it indefinetely. You get the idea, just
-;;       abandon this and move on to OBB?
-(defmethod rotate-bounding-volume ((collision-rectangle collision-rectangle) rotation-vec3)
-  (with-slots (radius radians-vec3) collision-rectangle
-    
-    (update-aabb collision-rectangle (sb-cga:rotate radians-vec3)
-		 (vec3 0.0 0.0 0.0))))
-
-
-
-
-
-;; TODO: obsolete, remove!
-(defgeneric recalculate-aabb-radius (game-object))
-
-;; this assumes that the CENTER-POINT is correct
-;; example use: new aabb after rotation
-(defmethod recalculate-aabb-radius ((rectangle rectangle))
-  (with-slots (x1 x2 y1 y2 radius center-point) rectangle
-    (macrolet ((r (subscript)
-		 `(aref radius ,subscript)))
-      ;; x-axis radius
-      (multiple-value-bind (min-along-x max-along-x)
-	  (collision:extreme-points-along-direction
-	   (vec3 1.0 0.0 0.0)
-	   (list x1 x2 y1 y2))
-	;; max-min = bv-x-diameter
-	;; (/ bv-diameter 2.0) = bv-x-radius
-	(setf
-	 (r 0)
-	 (/
-	  (aref (vec3- max-along-x min-along-x) 0)
-	  2.0)))
-      ;; y-axis radius
-      (multiple-value-bind (min-along-y max-along-y)
-	  (collision:extreme-points-along-direction
-	   (vec3 0.0 1.0 0.0)
-	   (list x1 x2 y1 y2))
-	;; max-min = bv-y-diameter
-	;; (/ bv-diameter 2.0) = bv-y-radius
-	(setf
-	 (r 1)
-	 (/
-	  (aref (vec3- max-along-y min-along-y) 1)
-	  2.0))))
-    (with-slots ((bv-center-point center-point)) (bounding-volume rectangle)
-      (setf bv-center-point center-point))))
 
 
 ;;
@@ -395,12 +291,7 @@ is more efficient in aabb collision tests!"
 		   :x1 x1
 		   :x2 x2
 		   :y1 y1
-		   :y2 y2
-		   ;; default bounding volume is an AABB rectangle provide with
-		   ;; the center-radius representation
-		   :bounding-volume (make-instance 'collision-rectangle
-						   :radius radius
-						   :center-point center-point))))
+		   :y2 y2)))
 
 (defun make-rectangle (&optional
 			 (x 0.0)
@@ -616,8 +507,7 @@ is more efficient in aabb collision tests!"
       (setf y1 (vec3+ y1 direction-vec3))
       (setf y2 (vec3+ y2 direction-vec3))
       ;; central-radius representation
-      (setf center-point (vec3+ center-point direction-vec3)))
-    (translate-bounding-volume (bounding-volume rectangle) direction-vec3)))
+      (setf center-point (vec3+ center-point direction-vec3)))))
 
 (defun move (name direction-vec2 &optional (seq-hash-table *dynamic-rectangles*))
   ;; for now we assume only *dynamic-rectangles* can be moved
@@ -639,9 +529,6 @@ is more efficient in aabb collision tests!"
 			 (aref radius 2)))
 		  ((typep point 'vec3)
 		   point)))
-      ;; translate bounding volume:
-      (translate-bounding-volume (bounding-volume rectangle)
-				 (vec3- point center-point))
       ;; update rendering data:
       (multiple-value-bind (n-x1 n-x2 n-y1 n-y2)
 	  (center-radius->vertices point radius)
@@ -652,12 +539,6 @@ is more efficient in aabb collision tests!"
 	      y2 n-y2)))))
 
 
-;; TODO: remove after tests:
-(defun matrix->translate-vec3 (matrix)
-  (vec3 (aref matrix 12)
-	(aref matrix 13)
-	(aref matrix 14)))
-;; /TESTs
 
 (defun scale-rectangle (rectangle scale-vec3)
   ;; TODO: handle 0.0-factor scaling
@@ -729,9 +610,7 @@ is more efficient in aabb collision tests!"
       (setf y2 (mat4*vec3 transformation-matrix y2))
 
       (when around-vec3
-	(setf center-point (mat4*vec3 transformation-matrix center-point)))
-      (rotate-bounding-volume (bounding-volume rectangle)
-      			      rotation-vec3))))
+	(setf center-point (mat4*vec3 transformation-matrix center-point))))))
 
 
 (defun rotate (name degree &optional (seq-hash-table *dynamic-rectangles*))
@@ -817,10 +696,6 @@ animation state of the object."
       (format t "~&start-time:~a ~&frame:~a ~&sprite:~a ~&mode:~a ~&direction:~a ~&default:~a~%"
 	      start-time frame sprite-name mode direction default-animation))))
 
-;; TODO: delete
-(defun tex (rectangle)
-  (with-slots (tex-x1 tex-x2 tex-y1 tex-y2) rectangle
-    (list tex-x1 tex-x2 tex-y1 tex-y2)))
 
 ;;Test data---------------------------------------------------------------------
 
