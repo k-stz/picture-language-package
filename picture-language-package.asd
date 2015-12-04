@@ -21,4 +21,5 @@
 	       (:file "gl-utils")
 	       (:file "opticl-utils")
 	       (:file "game-objects")
-	       (:file "game")))
+	       (:file "game")
+	       (:file "pic-lang")))
