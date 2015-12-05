@@ -11,9 +11,10 @@
 
 
 (defun window-middle-point (game-window)
-  (with-slots (width height) game-window
-    (vec3 (float (floor (/ width 2.0))) (float (floor (/ height 2.0)))
-	  0.0))))
+  (with-slots (game::width game::height) game-window
+    (vec3 (float (floor (/ game::width 2.0))) 
+	  (float (floor (/ game::height 2.0)))
+	  0.0)))
 
 ;; If we did import the :game package this would overwrite the definition of MAIN in game.lisp!!!
 (defun main ()
