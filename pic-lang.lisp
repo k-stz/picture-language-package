@@ -22,3 +22,11 @@
   (game:main)
 
   (game-objects::move-to :frame (window-middle-point game:*game-window*)))
+
+
+(defclass frame ()
+  ((x1 :initarg :x1 :type vec3)
+   (x2 :initarg :x2 :type vec3)
+   (y1 :initarg :y1 :type vec3)
+   (y2 :initarg :y2 :type vec3)))
+
