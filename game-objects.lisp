@@ -212,7 +212,14 @@
     (setf (slot-value rectangle 'radius)
     	  radius-vec3)))
 
-;; TODO: give useful print representation
+
+
+(defclass parallelogram ()
+  ((x1 :initarg :x1 :type vec3)
+   (x2 :initarg :x2 :type vec3)
+   (y1 :initarg :y1 :type vec3)
+   (y2 :initarg :y2 :type vec3)))
+
 ;; TODO: make super-class rectangle and sub-class game-object. Seperating rendering
 ;;       representation from interior representation and proxy geometry for collision
 ;;       tests
@@ -220,17 +227,10 @@
 ;;         will contain a representation slot (e.g. filled with sphere, rectangle), an
 ;;         <animation> slot a proxy geometry, a cached geometry (past timesteam when no
 ;;         collision orientation)
-(defclass rectangle ()
+(defclass rectangle (parallelogram)
   ;; TODO: instead of vec2 provide as seperate x1-x x1-y ? So that
   ;;       transforming into 1d-array is easier (to pass into foreign-array)
-  (;; postions
-   ;; TODO: start counting at 0 ?
-   (x1 :initarg :x1 :type vec3)
-   (x2 :initarg :x2 :type vec3)
-   (y1 :initarg :y1 :type vec3)
-   (y2 :initarg :y2 :type vec3)
-
-   ;; center-radius representation
+  (;; center-radius representation
    (center-point :initarg :center-point :type vec3)
    ;; {rx, ry, rz} rz is meaningless for 2d-rectangles, the "depth" attribute
    ;; is the z-component of the center-point
