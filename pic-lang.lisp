@@ -16,12 +16,24 @@
 	  (float (floor (/ game::height 2.0)))
 	  0.0)))
 
+;; experiments -----------------------------------------------------------------
+
+
+
+;; move upstream once this works!
+;; (defun draw-lines ()
+;;   (init-lines-vao) ;; TODO: move upsteam once this works!
+
+;;   )
+
+
+;; -----------------------------------------------------------------------------
+
 ;; If we did import the :game package this would overwrite the definition of MAIN in game.lisp!!!
 (defun main ()
   (add-rectangle-as :frame *frame-rectangle*)
   (game:main)
-
-  (game-objects::move-to :frame (window-middle-point game:*game-window*)))
+  (draw-lines))
 
 
 (defclass frame ()

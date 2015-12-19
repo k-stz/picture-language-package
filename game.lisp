@@ -186,6 +186,12 @@
   (game-objects::initialize-rectangle-vao)
   (game-objects::create-rectangle-texture)
   (rectangle-program-pixel-transfer w)
+
+
+  ;; drawing lines TODO refactor once this works!
+  (game-objects::initialize-lines-vao)
+
+  
   ;; texture
   (use-program *programs-dict* :pixel-orthogonal)
   (uniform :int :rectangle-texture game-objects::*tex-unit*) ; = glUniform1i(<location>, <texture-image-unit>);
@@ -262,6 +268,9 @@
 
   (use-program *programs-dict* 0))
 
+(defun draw-lines ()
+  (game-objects::update-lines-vao))
+
 (defmethod render ((window game-window))
   ;; Your GL context is automatically active.  FLUSH and
   ;; SDL2:GL-SWAP-WINDOW are done implicitly by GL-WINDOW  (!!)
@@ -269,6 +278,7 @@
   (gl:clear :color-buffer :depth-buffer-bit)
   
   (draw-rectangles)
+  (draw-lines)
 
   (display-fps window)
   (framelimit window 60))
