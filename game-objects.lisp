@@ -703,38 +703,35 @@ animation state of the object."
 (when (< (hash-table-count (the-table *dynamic-rectangles*)) 1)
   (add-rectangle-as :hero (make-rectangle)))
 
+;;------------------------------------------------------------------------------
+
+
 ;; experiment drawing lines
 
 (defvar *lines-vao*)
 (defvar *lines-position-vbo*)
-(defvar *lines-tex-vbo*)
 
 (defun initialize-lines-vao ()
   (let ((vao (first (gl:gen-vertex-arrays 1)))
-	(position-vbo (first (gl:gen-buffers 1)))
-	(tex-vbo (first (gl:gen-buffers 1))))
+	(position-vbo (first (gl:gen-buffers 1))))
+    
     (gl:bind-vertex-array vao)
 
     (gl:bind-buffer :array-buffer position-vbo)
     (%gl:enable-vertex-attrib-array 0)
     (%gl:vertex-attrib-pointer 0 3 :float :false 0 0)
 
-    (gl:bind-buffer :array-buffer tex-vbo)
-    (%gl:enable-vertex-attrib-array 1)
-    (%gl:vertex-attrib-pointer 1 2 :float :false 0 0)
-
-
     (gl:bind-vertex-array 0)
     (gl:bind-buffer :array-buffer 0)
 
 
     (setf *lines-vao* vao
-	  *lines-position-vbo* position-vbo
-	  *lines-tex-vbo* tex-vbo)))
+	  *lines-position-vbo* position-vbo)))
 
 (defparameter *line-segments* (list (vec3 0.0 0.0) (vec3 1.0 1.0)))
 
-(defparameter *single-line* #(0.0 0.0 0.0 100.0 100.0 0.0))
+(defparameter *single-line* #(0.0 0.0 0.0 100.0 100.0 0.0
+			      200.0 200.0 0.0 300.0 300.0 0.0))
 (defparameter *ffi-single-line* (cffi:foreign-alloc :float
 						    :initial-contents
 						    *single-line*))
@@ -751,3 +748,6 @@ animation state of the object."
 
   (gl:bind-vertex-array 0)
   (gl:bind-buffer :array-buffer 0))
+
+(defun draw-lines ()
+  (%gl:draw-arrays :lines 0 6))

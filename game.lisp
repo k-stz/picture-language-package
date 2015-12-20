@@ -90,11 +90,17 @@
     ;; source code
     (shader pixel-orthogonal-v :vertex-shader (:file "pixel-orthogonal.vert"))
     (shader 2d-rectangle-texture-f :fragment-shader (:file "2d-rectangle-texture.frag"))
+    ;; for drawing lines
+    (shader pixel-orthogonal-lines-v :vertex-shader (:file "pixel-orthogonal-lines.vert"))
+    (shader pixel-orthogonal-lines-f :vertex-shader (:file "pixel-orthogonal-lines.frag"))
     
     ;; here we compose the shaders into programs, in this case just one ":basic-projection"
     (program :pixel-orthogonal (:window-width :window-height :rectangle-texture)
 	     (:vertex-shader pixel-orthogonal-v)
-	     (:fragment-shader 2d-rectangle-texture-f)))
+	     (:fragment-shader 2d-rectangle-texture-f))
+    (program :pixel-lines (:window-width :window-height)
+	     (:vertex-shader pixel-orthogonal-lines-v)
+	     (:fragment-shader pixel-orthogonal-lines-f)))
   ;; function may only run when a gl-context exists, as its documentation
   ;; mentions
   (compile-shader-dictionary 'shaders))
@@ -148,6 +154,10 @@
   ;; here we pass the window width and height to the shader, so it has
   ;; all the data needed to translate the pixel rectangle properly
   (use-program *programs-dict* :pixel-orthogonal)
+  (uniform :int :window-width (window-width game-window))
+  (uniform :int :window-height (window-height game-window))
+  (use-program *programs-dict* 0)
+  (use-program *programs-dict* :pixel-lines)
   (uniform :int :window-width (window-width game-window))
   (uniform :int :window-height (window-height game-window))
   (use-program *programs-dict* 0))
@@ -269,7 +279,15 @@
   (use-program *programs-dict* 0))
 
 (defun draw-lines ()
-  (game-objects::update-lines-vao))
+  (game-objects::update-lines-vao)
+  
+  (gl:bind-vertex-array game-objects::*lines-vao*)
+  (use-program *programs-dict* :pixel-lines)
+
+  (game-objects::draw-lines)
+
+  (gl:bind-vertex-array 0)
+  (use-program *programs-dict* 0))
 
 (defmethod render ((window game-window))
   ;; Your GL context is automatically active.  FLUSH and
