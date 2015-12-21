@@ -728,26 +728,27 @@ animation state of the object."
     (setf *lines-vao* vao
 	  *lines-position-vbo* position-vbo)))
 
-(defparameter *line-segments* (list (vec3 0.0 0.0) (vec3 1.0 1.0)))
-
-(defparameter *single-line* #(0.0 0.0 0.0 100.0 100.0 0.0
+;; TODO: use global variables containing all the lines to be drawn
+;;       define a function that will push new lines into it, document
+;;       type to be used using CHECK-TYPE
+(defparameter *line-segments* (list 0.0 0.0 0.0 100.0 100.0 0.0
 			      200.0 200.0 0.0 300.0 300.0 0.0))
-(defparameter *ffi-single-line* (cffi:foreign-alloc :float
-						    :initial-contents
-						    *single-line*))
 
 (defun update-lines-vao ()
-  (gl:bind-vertex-array *lines-vao*)
+  (let ((pos-ffi-array (cffi:foreign-alloc :float
+					   :initial-contents
+					   *line-segments*)))
+    (gl:bind-vertex-array *lines-vao*)
 
-  ;; positions
-  (gl:bind-buffer :array-buffer *lines-position-vbo*)
-  (%gl:buffer-data :array-buffer (* 4 (length *single-line*)) *ffi-single-line* :static-draw)
+    ;; positions
+    (gl:bind-buffer :array-buffer *lines-position-vbo*)
+    (%gl:buffer-data :array-buffer (* 4 (length *line-segments*)) pos-ffi-array :static-draw)
 
-  ;; TODO: once this works create a (let ...) on the fly ffi data and (cffi-sys:foreign-free ..)
-  ;; it!
+    (cffi-sys:foreign-free pos-ffi-array)
 
-  (gl:bind-vertex-array 0)
-  (gl:bind-buffer :array-buffer 0))
+    
+    (gl:bind-vertex-array 0)
+    (gl:bind-buffer :array-buffer 0)))
 
 (defun draw-lines ()
   (%gl:draw-arrays :lines 0 6))
