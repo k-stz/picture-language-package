@@ -1,6 +1,6 @@
 ;; sbcl 2.6% mem
 
-(defpackage :game
+(defpackage :pic-lang-core
   ;; :use inherits all the exported symbols from the package given
   (:use :cl
 	;; this one's important, as all the defclass lambda lists
@@ -15,9 +15,9 @@
 	:gl-utils)
   (:export
    #:main
-   #:*game-window*))
+   #:*pic-lang-window*))
 
-(in-package :game)
+(in-package :pic-lang-core)
 
 ;; with this you can call gl cmds in the repl while the sdl2kit window is running
 ;; affecting it:
@@ -40,7 +40,7 @@
 ;;;
 ;;; Then, make a window.
 ;;;
-;;;   (make-instance 'sdl2.kit.test:game-window)
+;;;   (make-instance 'sdl2.kit.test:pic-lang-window)
 ;;;
 ;;; After you close a window, it will be collected at some point.
 
@@ -53,7 +53,7 @@
 ;;; These are the only functions guaranteed to be "safe" (including
 ;;; threadsafety and other expectations).
 
-(defclass game-window (kit.sdl2:gl-window)
+(defclass pic-lang-window (kit.sdl2:gl-window)
   ((start-time :initform (get-internal-real-time))
    (one-frame-time :initform (get-internal-real-time))
    ;; TODO: unify with framelimit usage, for now used for movement
@@ -63,7 +63,7 @@
    (width :accessor window-width)
    (height :accessor window-height)))
 
-(defvar *game-window*)
+(defvar *pic-lang-window*)
 
 (defun main ()
   ;; TODO: interferes with other sdl2 using applications once executed!
@@ -73,7 +73,7 @@
     ;; right one is used:
     (sdl2:gl-set-attr :context-major-version 3)
     (sdl2:gl-set-attr :context-minor-version 3))
-  (setf *game-window* (make-instance 'game-window)))
+  (setf *pic-lang-window* (make-instance 'pic-lang-window)))
 
 
 ;;Shader------------------------------------------------------------------------
@@ -150,20 +150,20 @@
 ;;init code---------------------------------------------------------------------
 
 
-(defun rectangle-program-pixel-transfer (game-window)
+(defun rectangle-program-pixel-transfer (pic-lang-window)
   ;; here we pass the window width and height to the shader, so it has
   ;; all the data needed to translate the pixel rectangle properly
   (use-program *programs-dict* :pixel-orthogonal)
-  (uniform :int :window-width (window-width game-window))
-  (uniform :int :window-height (window-height game-window))
+  (uniform :int :window-width (window-width pic-lang-window))
+  (uniform :int :window-height (window-height pic-lang-window))
   (use-program *programs-dict* 0)
   (use-program *programs-dict* :pixel-lines)
-  (uniform :int :window-width (window-width game-window))
-  (uniform :int :window-height (window-height game-window))
+  (uniform :int :window-width (window-width pic-lang-window))
+  (uniform :int :window-height (window-height pic-lang-window))
   (use-program *programs-dict* 0))
 
 
-(defmethod initialize-instance :after ((w game-window) &key &allow-other-keys)
+(defmethod initialize-instance :after ((w pic-lang-window) &key &allow-other-keys)
   (multiple-value-bind (width height) (window-size w)
     (setf (window-width w) width
 	  (window-height w) height))
@@ -215,7 +215,7 @@
 ;;Events------------------------------------------------------------------------
 
 
-(defmethod close-window ((window game-window))
+(defmethod close-window ((window pic-lang-window))
   (format t "Bye!~%")
   ;; To _actually_ destroy the GL context and close the window,
   ;; CALL-NEXT-METHOD.  You _may_ not want to do this, if you wish to
@@ -238,7 +238,7 @@
 
 (defparameter *nyo-rectangle* (init-nyo-rectangle))
 
-(defmethod keyboard-event ((window game-window) state ts repeat-p keysym)
+(defmethod keyboard-event ((window pic-lang-window) state ts repeat-p keysym)
 
   ;; makes the keyboard state global in the window object, so we can access
   ;; it whenever we want in the rendering loop
@@ -289,7 +289,7 @@
   (gl:bind-vertex-array 0)
   (use-program *programs-dict* 0))
 
-(defmethod render ((window game-window))
+(defmethod render ((window pic-lang-window))
   ;; Your GL context is automatically active.  FLUSH and
   ;; SDL2:GL-SWAP-WINDOW are done implicitly by GL-WINDOW  (!!)
   ;; after RENDER.
