@@ -750,5 +750,10 @@ animation state of the object."
     (gl:bind-vertex-array 0)
     (gl:bind-buffer :array-buffer 0)))
 
+(defun add-line-segment (x1 y1 x2 y2)
+  (setf *line-segments*
+	(append (list x1 y1 0.0 x2 y2 0.0)
+		*line-segments*)))
+
 (defun draw-lines ()
   (%gl:draw-arrays :lines 0 6))
