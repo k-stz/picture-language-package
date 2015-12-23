@@ -1,7 +1,7 @@
 (defpackage :pic-lang
   (:use :cl
 	:kit.math
-	:game-objects
+	:pic-objects
 	:gl-utils)
   (:export
    #:main))

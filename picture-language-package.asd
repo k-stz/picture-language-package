@@ -20,6 +20,6 @@
 	       (:file "math")
 	       (:file "gl-utils")
 	       (:file "opticl-utils")
-	       (:file "game-objects")
+	       (:file "pic-objects")
 	       (:file "core-rendering-loop")
 	       (:file "pic-lang")))

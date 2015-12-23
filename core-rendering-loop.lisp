@@ -11,7 +11,7 @@
 	:kit.math
 	:opticl
 	:opticl-utils ;; ~/opticl-stuff.lisp
-	:game-objects
+	:pic-objects
 	:gl-utils)
   (:export
    #:main
@@ -193,18 +193,18 @@
   (initialize-program)
 
   ;; EXPERIMENTS
-  (game-objects::initialize-rectangle-vao)
-  (game-objects::create-rectangle-texture)
+  (pic-objects::initialize-rectangle-vao)
+  (pic-objects::create-rectangle-texture)
   (rectangle-program-pixel-transfer w)
 
 
   ;; drawing lines TODO refactor once this works!
-  (game-objects::initialize-lines-vao)
+  (pic-objects::initialize-lines-vao)
 
   
   ;; texture
   (use-program *programs-dict* :pixel-orthogonal)
-  (uniform :int :rectangle-texture game-objects::*tex-unit*) ; = glUniform1i(<location>, <texture-image-unit>);
+  (uniform :int :rectangle-texture pic-objects::*tex-unit*) ; = glUniform1i(<location>, <texture-image-unit>);
   (use-program *programs-dict* 0)
   
   ;; /EXPERIMETNS
@@ -224,16 +224,16 @@
 
 
 (defun init-nyo-rectangle ()
-  (let ((nyo-rectangle ;(game-objects:make-rectangle 100.0 100.0 64.0 96.0)
-	 (game-objects:make-rectangle-c (vec3 100.0 100.0 0.0)
+  (let ((nyo-rectangle ;(pic-objects:make-rectangle 100.0 100.0 64.0 96.0)
+	 (pic-objects:make-rectangle-c (vec3 100.0 100.0 0.0)
 					(vec3 32.0 48.0 0.0))))
-    (game-objects:add-rectangle-as :nyo nyo-rectangle)
+    (pic-objects:add-rectangle-as :nyo nyo-rectangle)
     ;; NEXT-TODO:
     ;; Problem with this: some BV transformation and creation function use the rendering coordinates
     ;; :x1 :x2 :y1 :y2. Either create, (CH?), point set as part of the representation stored in
     ;; :bounding-volume slot of Rectangle or derive point set from rectangle/radius etc.
     ;; (set-radius (bounding-volume nyo-rectangle) (vec3 20.0 42.0 0.0))
-    (game-objects:set-animation :nyo :walk :down 0 :nyo)
+    (pic-objects:set-animation :nyo :walk :down 0 :nyo)
     ))
 
 (defparameter *nyo-rectangle* (init-nyo-rectangle))
@@ -246,12 +246,12 @@
   
   (let ((scancode (sdl2:scancode keysym)))
     (when (eq :scancode-d scancode)
-      (game-objects:move :nyo (vec2 5.0 0.0)))
+      (pic-objects:move :nyo (vec2 5.0 0.0)))
     (when (eq :scancode-a scancode)
-      (game-objects:move :nyo (vec2 -5.0 0.0)))
+      (pic-objects:move :nyo (vec2 -5.0 0.0)))
 
     (when (eq :scancode-c scancode)
-      (game-objects::clr-seq-hash game-objects::*dynamic-rectangles*))
+      (pic-objects::clr-seq-hash pic-objects::*dynamic-rectangles*))
     (when (eq :scancode-n scancode)
       (init-nyo-rectangle))
     
@@ -264,27 +264,27 @@
 ;;Rendering----------------------------------------------------------------------
 
 (defun draw-rectangles ()
-  (game-objects::update-rectangle-vao)
-  (game-objects::update-rectangle-texture)
+  (pic-objects::update-rectangle-vao)
+  (pic-objects::update-rectangle-texture)
 
-  (gl:bind-vertex-array game-objects::*vao*)
+  (gl:bind-vertex-array pic-objects::*vao*)
   (use-program *programs-dict* :pixel-orthogonal)
 
 
   ;; TODO: apply draw range
-  (game-objects::draw-rectangles)
+  (pic-objects::draw-rectangles)
 
   (gl:bind-vertex-array 0)
 
   (use-program *programs-dict* 0))
 
 (defun draw-lines ()
-  (game-objects::update-lines-vao)
+  (pic-objects::update-lines-vao)
   
-  (gl:bind-vertex-array game-objects::*lines-vao*)
+  (gl:bind-vertex-array pic-objects::*lines-vao*)
   (use-program *programs-dict* :pixel-lines)
 
-  (game-objects::draw-lines)
+  (pic-objects::draw-lines)
 
   (gl:bind-vertex-array 0)
   (use-program *programs-dict* 0))

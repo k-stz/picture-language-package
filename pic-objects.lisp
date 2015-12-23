@@ -17,7 +17,7 @@
 
 
 
-(defpackage :game-objects
+(defpackage :pic-objects
   (:use :cl
 	;; oooooh, only the EXTERNAL symbols get inherited!!
 	:kit.gl.shader
@@ -46,7 +46,7 @@
 	   :set-animation
 	   :next-animation-frame))
 
-(in-package :game-objects)
+(in-package :pic-objects)
 
 
 ;;Sequential HASH-TABLE---------------------------------------------------------
@@ -220,10 +220,10 @@
    (y1 :initarg :y1 :type vec3)
    (y2 :initarg :y2 :type vec3)))
 
-;; TODO: make super-class rectangle and sub-class game-object. Seperating rendering
+;; TODO: make super-class rectangle and sub-class pic-object. Seperating rendering
 ;;       representation from interior representation and proxy geometry for collision
 ;;       tests
-;; UPDATE: maybe go with the superclass: rectangle, subclass: game-object approach, which
+;; UPDATE: maybe go with the superclass: rectangle, subclass: pic-object approach, which
 ;;         will contain a representation slot (e.g. filled with sphere, rectangle), an
 ;;         <animation> slot a proxy geometry, a cached geometry (past timesteam when no
 ;;         collision orientation)
@@ -275,7 +275,7 @@ Note the z-component of the radius-vec3 will decide the depth of all the points 
 
 ;; TODO: add texture coordinate to initilizations, providing a texture.png
 ;; and a fixed texture coordinate with texatl:with-sprite ?
-;; UPDATE: maybe go with the superclass: rectangle, subclass: game-object which will contain
+;; UPDATE: maybe go with the superclass: rectangle, subclass: pic-object which will contain
 ;;         a representation point (e.g. filled with sphere, rectangle), an <animation> slot
 ;;         a proxy geometry, a cached geometry (past timesteam when no collision orientation)
 (defun make-rectangle-c (&optional
