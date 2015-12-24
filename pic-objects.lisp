@@ -44,7 +44,11 @@
 	   :do-seq-hash
 	   ;;animation
 	   :set-animation
-	   :next-animation-frame))
+	   :next-animation-frame
+	   ;;lines
+	   :add-line-segment
+	   :clear-lines
+	   ))
 
 (in-package :pic-objects)
 
@@ -754,6 +758,10 @@ animation state of the object."
   (setf *line-segments*
 	(append (list x1 y1 0.0 x2 y2 0.0)
 		*line-segments*)))
+
+(defun clear-lines ()
+  "Clear all lines from the screen."
+  (setf *line-segments* '(0.0 0.0 0.0 0.0 0.0 0.0)))
 
 (defun draw-lines ()
   (%gl:draw-arrays :lines 0 6))
