@@ -759,9 +759,15 @@ animation state of the object."
 	(append (list x1 y1 0.0 x2 y2 0.0)
 		*line-segments*)))
 
+
 (defun clear-lines ()
   "Clear all lines from the screen."
   (setf *line-segments* '(0.0 0.0 0.0 0.0 0.0 0.0)))
 
 (defun draw-lines ()
-  (%gl:draw-arrays :lines 0 6))
+  ;; in mode :LINES DRAW-ARRAYS each COUNT takes 2 components, i.e. "2" would mean that it
+  ;; will read _4_ components from the gpu array.  Because we defined one vertex having 3
+  ;; components (gl:vertex-attrib-point...). We need _6_ to draw a single line.
+  ;; Again COUNT taking 2 at the same time a (draw-arrays :lines 0 3) <- will fetch 6 components
+  ;; That's why we do the strange (* (length ..) 0.5) halving multiplication
+  (%gl:draw-arrays :lines 0 (* (length *line-segments*) 0.5)))
