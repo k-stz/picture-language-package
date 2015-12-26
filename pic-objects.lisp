@@ -11,7 +11,7 @@
 ;; Possible problem: what if a rectangle disappears? How to remove it from
 ;; the sequential hash-table?
 
-;; TODO: texatl to get sprites and spritesheet integretation, maybe even text!!
+;; TODO: texatl to get sprites and spritesheet integration, maybe even text!!
 
 ;; one big texture to read all the data from, again using texatl?
 
@@ -65,7 +65,7 @@
 (defun make-seq-hash-table ()
   (make-instance 'sequential-hash-table))
 
-;; it looks like a hash-table, this might be coutner-intuitive as GETHASH, CLRHASH etc. don't work
+;; it looks like a hash-table, this might be counter-intuitive as GETHASH, CLRHASH etc. don't work
 (defmethod print-object ((s sequential-hash-table) stream)
   (declare (type stream stream))
   (let ((hash-table (the-table s)))
@@ -124,7 +124,7 @@
   (progn (maphash function (the-table seq-hash))
 	 result))
 
-;; hash so we can querry (gethash :hero *dynamic-rectangles)
+;; hash so we can query (gethash :hero *dynamic-rectangles)
 ;; TODO: downside transition from hashtable to ffi-array
 ;;       workaround: store as array, and create a hashtable to associate name with index:
 ;;       (aref *dynamics-array* (gethash 'name *hash*)) ;<- abstracted away
@@ -162,16 +162,16 @@
 
 (defclass animation ()
   ((start-time :initarg :start-time :initform 0)
-   ;; used to determine how many times the animation state has been querried for
+   ;; used to determine how many times the animation state has been queried for
    ;; an animation frame, to determine how to change the state. This effectively
-   ;; in what order the animation going to be showsn
-   (animation-querries  :type integer :initform 0)
-   ;; this determines how many aimation-querries are needed
-   (querries-per-frame :type integer)
+   ;; in what order the animation going to be shown
+   (animation-queries  :type integer :initform 0)
+   ;; this determines how many animation-queries are needed
+   (queries-per-frame :type integer)
    ;; hm this is the global-texture, so there should also be a global sprite sheet
    ;; (spritesheet :type TEXATL.CL:TEXATL-SPRITESHEET :initarg :spritesheet)
    (frame :type integer :initform 0)
-   ;; how many distinct frames are available for the aimation to cycle through
+   ;; how many distinct frames are available for the animation to cycle through
    (frame-count :type integer :initform 3 :reader frame-count)
    ;; idea is to pass those as arguments like so:
    ;; (texatl.cl:sprite <spritesheet> '(<sprite-name> <mode> <direction>) 0)
@@ -224,15 +224,15 @@
    (y1 :initarg :y1 :type vec3)
    (y2 :initarg :y2 :type vec3)))
 
-;; TODO: make super-class rectangle and sub-class pic-object. Seperating rendering
+;; TODO: make super-class rectangle and sub-class pic-object. Separating rendering
 ;;       representation from interior representation and proxy geometry for collision
 ;;       tests
 ;; UPDATE: maybe go with the superclass: rectangle, subclass: pic-object approach, which
 ;;         will contain a representation slot (e.g. filled with sphere, rectangle), an
-;;         <animation> slot a proxy geometry, a cached geometry (past timesteam when no
+;;         <animation> slot a proxy geometry, a cached geometry (past time step when no
 ;;         collision orientation)
 (defclass rectangle (parallelogram)
-  ;; TODO: instead of vec2 provide as seperate x1-x x1-y ? So that
+  ;; TODO: instead of vec2 provide as separate x1-x x1-y ? So that
   ;;       transforming into 1d-array is easier (to pass into foreign-array)
   (;; center-radius representation
    (center-point :initarg :center-point :type vec3)
@@ -277,11 +277,11 @@ Note the z-component of the radius-vec3 will decide the depth of all the points 
 	 (y2 (vec3+ center-point-vec3 (vec3 rx ry rz))))
     (values x1 x2 y1 y2)))
 
-;; TODO: add texture coordinate to initilizations, providing a texture.png
+;; TODO: add texture coordinate to initialisation, providing a texture.png
 ;; and a fixed texture coordinate with texatl:with-sprite ?
 ;; UPDATE: maybe go with the superclass: rectangle, subclass: pic-object which will contain
 ;;         a representation point (e.g. filled with sphere, rectangle), an <animation> slot
-;;         a proxy geometry, a cached geometry (past timesteam when no collision orientation)
+;;         a proxy geometry, a cached geometry (past time step when no collision orientation)
 (defun make-rectangle-c (&optional
 			   (center-point (vec3 0.0 0.0 0.0))
 			   (radius (vec3 50.0 50.0 0.0)))
@@ -362,7 +362,7 @@ is more efficient in aabb collision tests!"
     ;;VBO yes, this is necessary, because it associates the vbo
     ;;with the vao
 
-    ;;postion
+    ;;position
     (gl:bind-buffer :array-buffer position-vbo)
     (%gl:enable-vertex-attrib-array 0)
     (%gl:vertex-attrib-pointer 0 3 :float :false 0 0)
@@ -406,7 +406,7 @@ is more efficient in aabb collision tests!"
 
     ;;position
     (gl:bind-buffer :array-buffer *position-vbo*)
-    ;; size-of(flaot) => 4, hence we multiply with 4
+    ;; size-of(float) => 4, hence we multiply with 4
     (%gl:buffer-data :array-buffer (* 4 (length verts)) pos-ffi-array :static-draw)
 
 
@@ -553,10 +553,10 @@ is more efficient in aabb collision tests!"
 				   ;; NEXT-TODO DOT-PRODUCT is the culprit!
 				   ;; rotation beyond 180-degree doesn't work
 				   ;; with this properly!
-				   ;; SOLUTION: (IF (CROSS-PRODCUCT ...)
+				   ;; SOLUTION: (IF (CROSS-PRODUCT ...)
 				                    ;; <this was around>
 						    ;; <other way around>)
-				   ;; add tighter BV to nyo initialization for
+				   ;; add tighter BV to nyo initialisation for
 				   ;; more intuitive collision testing
 				   (sb-cga:dot-product (vec3 0.0 1.0 0.0)
 						       up-dir))))
@@ -766,7 +766,7 @@ animation state of the object."
 
 (defun draw-lines ()
   ;; in mode :LINES DRAW-ARRAYS each COUNT takes 2 components, i.e. "2" would mean that it
-  ;; will read _4_ components from the gpu array.  Because we defined one vertex having 3
+  ;; will read _4_ components from the GPU array.  Because we defined one vertex having 3
   ;; components (gl:vertex-attrib-point...). We need _6_ to draw a single line.
   ;; Again COUNT taking 2 at the same time a (draw-arrays :lines 0 3) <- will fetch 6 components
   ;; That's why we do the strange (* (length ..) 0.5) halving multiplication
