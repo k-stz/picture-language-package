@@ -36,6 +36,7 @@
 	   :make-rectangle-c
 	   :add-rectangle-as
 	   :remove-rectangle
+	   :clear-parallelograms
 	   :get-rectangle
 	   :move
 	   :scale
@@ -157,6 +158,10 @@
 	  (vector-push-extend name (keys-in-order seq-hash-table))))
     (setf (gethash name rectangles-container) rectangle)))
 
+
+(defun clear-parallelograms ()
+  (clr-seq-hash *dynamic-rectangles*)
+  (clr-seq-hash *static-rectangles*))
 
 ;;Rectangle---------------------------------------------------------------------
 
@@ -755,6 +760,7 @@ animation state of the object."
     (gl:bind-buffer :array-buffer 0)))
 
 (defun add-line-segment (x1 y1 x2 y2)
+  
   (setf *line-segments*
 	(append (list x1 y1 0.0 x2 y2 0.0)
 		*line-segments*)))
