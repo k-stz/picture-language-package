@@ -180,9 +180,11 @@
   (gl:viewport 0 0 (window-width w) (window-height w))
 
   ;; with culling
-  (gl:enable :cull-face)
-  (gl:cull-face :back)
-  (gl:front-face :cw)
+  ;; (gl:enable :cull-face)
+  ;; (gl:cull-face :back-and-front)
+  ;; (gl:front-face :cw)
+  ;; disabled so we can flip the painters and invert them on themselves!
+  (gl:disable :cull-face)
 
   ;; with depth-buffer
   (gl:enable :depth-test)
