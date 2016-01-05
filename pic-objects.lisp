@@ -160,6 +160,8 @@
 
 
 (defun clear-parallelograms ()
+  ;; TODO: that's a bad name, these are DEFCLASS PARALLELOGRAMS but, if this is an API
+  ;; function they're oughta be called "pictures" for example
   (clr-seq-hash *dynamic-rectangles*)
   (clr-seq-hash *static-rectangles*))
 
